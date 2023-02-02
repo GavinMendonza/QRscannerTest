@@ -12,4 +12,24 @@
         android:layout_centerInParent="true"
         android:id="@+id/btn_scan"
         />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/btn_scan"
+        android:layout_centerInParent="true"
+        android:layout_marginBottom="50pt"
+        android:text="" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="logout"
+        android:layout_centerInParent="true"
+        android:layout_below="@id/btn_scan"
+        android:layout_marginTop="50pt"
+        android:id="@+id/button2"
+        />
+
 </RelativeLayout>
