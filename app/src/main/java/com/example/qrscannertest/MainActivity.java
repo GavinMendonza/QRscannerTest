@@ -1,6 +1,7 @@
 package com.example.qrscannertest;
 //v1: built the scanner
 //v1.2: adding login and DB writing
+//v1.3: added a score entry and update db
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -8,8 +9,10 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -37,7 +40,12 @@ public class MainActivity extends AppCompatActivity
 
     GoogleSignInOptions gso;
     GoogleSignInClient gsc;
+    DatabaseReference myRef;
+    FirebaseDatabase database;
+    HashMap dataSet;
 
+    int points;
+    EditText edtxtPoints;
 
     Button btn_scan;
     char ch;
@@ -49,6 +57,7 @@ public class MainActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        edtxtPoints=findViewById(R.id.editTextForPoints);
         logoutBtn=findViewById(R.id.button2);
         name=findViewById(R.id.textView);
         gso=new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -59,8 +68,8 @@ public class MainActivity extends AppCompatActivity
 
 
 //        start working on sxc check here
-        FirebaseDatabase database = FirebaseDatabase.getInstance("https://eccloginmoduletest-default-rtdb.asia-southeast1.firebasedatabase.app/");
-        DatabaseReference myRef = database.getReference("users");
+        database = FirebaseDatabase.getInstance("https://eccloginmoduletest-default-rtdb.asia-southeast1.firebasedatabase.app/");
+        myRef = database.getReference("users");
         myRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -145,8 +154,9 @@ public class MainActivity extends AppCompatActivity
                 if (scannedData.charAt(i) == ch)
                     cnt++;
             }
+
+            String[] arrOfStr = scannedData.split("#", 0);
             if(cnt==2) {
-                String[] arrOfStr = scannedData.split("#", 0);
 //                for (String a : arrOfStr)    //debug
 //                    Log.d("data ", "data is: "+a);
                 scannedData = "Name: " + arrOfStr[0] + "\n" + "UID: " + arrOfStr[1] + "\n" + "Class: " + arrOfStr[2];
@@ -157,15 +167,48 @@ public class MainActivity extends AppCompatActivity
 //            builder.setMessage(result.getContents());
 //            builder.setMessage("this is the msg");
             builder.setMessage(scannedData);
-            builder.setPositiveButton("OK", new DialogInterface.OnClickListener()
+
+            builder.setNegativeButton("Cancel", (dialogInterface, i) -> dialogInterface.dismiss());
+
+
+            builder.setPositiveButton("Submit", new DialogInterface.OnClickListener()
             {
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i)
                 {
+//                    dialogInterface.dismiss();
+                    updateDB(arrOfStr[1], String.valueOf(edtxtPoints.getText()));
                     dialogInterface.dismiss();
+
                 }
             }).show();
         }
     });
+
+    private void updateDB(String uid, String points) {
+        // Read from the database
+
+
+        myRef.get().addOnCompleteListener(new OnCompleteListener<DataSnapshot>() {
+            @Override
+            public void onComplete(@NonNull Task<DataSnapshot> task) {
+                if (!task.isSuccessful()) {
+                    Log.e("firebase", "Error getting data", task.getException());
+                }
+                else {
+                    Log.d("firebase", String.valueOf(task.getResult().getValue()));
+                    dataSet = (HashMap) task.getResult().getValue();
+                    Log.d("firebase", "onComplete: "+((HashMap)dataSet.get(uid)).get("score"));
+
+                    myRef.child(uid).child("score").setValue(Integer.parseInt(String.valueOf(((HashMap)dataSet.get(uid)).get("score")))+Integer.parseInt(points));
+                }
+            }
+        });
+
+        Log.d("firebase", "updateDB: "+dataSet);
+//        HashMap dataSet2= dataSet.get("205009");
+//        dataSet2.get("score");
+//        myRef.child(uid).child("score").setValue(dataSet2.get("score")+points);
+    }
 
 }
